@@ -1,0 +1,22 @@
+spring:
+  main:
+    web-application-type: none
+    banner-mode: "off"
+  ai:
+    mcp:
+      server:
+        name: notes-mcp-server
+        version: 0.0.1
+        type: SYNC
+        instructions: >-
+          Demo - in-memory notes service. Use the tools to add, search and delete notes,
+          read notes://all, notes://{id} and notes://stats as resources, and the
+          summarize_notes and weekly_review prompts for workflows.
+        annotation-scanner:
+          enabled: true
+
+logging:
+  pattern:
+    console:
+  file:
+    name: logs/mcp-server.log

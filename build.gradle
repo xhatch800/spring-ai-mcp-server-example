@@ -1,0 +1,91 @@
+plugins {
+    id 'java'
+    id 'jacoco'
+    id 'org.springframework.boot' version '3.5.16'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'org.springframework.ai:spring-ai-bom:1.1.8'
+    }
+}
+
+dependencies {
+    implementation 'org.springframework.ai:spring-ai-starter-mcp-server'
+    implementation 'org.springframework.boot:spring-boot-starter-json'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Single runnable jar at build/libs/mcp-notes-server.jar (no "-plain" jar next to it).
+jar {
+    enabled = false
+}
+
+bootJar {
+    archiveFileName = 'mcp-notes-server.jar'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    // The protocol and stdout tests spawn the real jar over stdio.
+    dependsOn tasks.named('bootJar')
+    def jarFile = tasks.named('bootJar').flatMap { it.archiveFile }
+    systemProperty 'mcp.server.jar', jarFile.get().asFile.absolutePath
+    // Keep test logs out of the real logs/ directory.
+    systemProperty 'logging.file.name', layout.buildDirectory.file('test-logs/mcp-server.log').get().asFile.absolutePath
+    finalizedBy tasks.named('jacocoTestReport')
+}
+
+// Only exclusion from coverage: the Spring Boot main class (a one-line bootstrap).
+def coverageClassDirs = {
+    files(sourceSets.main.output.classesDirs.collect {
+        fileTree(it) { exclude '**/McpNotesApplication.class' }
+    })
+}
+
+jacocoTestReport {
+    dependsOn tasks.named('test')
+    classDirectories.setFrom(coverageClassDirs())
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+jacocoTestCoverageVerification {
+    dependsOn tasks.named('test')
+    classDirectories.setFrom(coverageClassDirs())
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.90
+            }
+            limit {
+                counter = 'BRANCH'
+                value = 'COVEREDRATIO'
+                minimum = 0.85
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('jacocoTestCoverageVerification')
+}
