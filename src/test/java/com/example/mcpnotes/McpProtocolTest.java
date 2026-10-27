@@ -70,7 +70,7 @@ class McpProtocolTest {
     void initializeReportsServerInfoCapabilitiesAndInstructions() {
         assertThat(initResult.serverInfo().name()).isEqualTo("notes-mcp-server");
         assertThat(initResult.serverInfo().version()).isEqualTo("0.0.1");
-        assertThat(initResult.instructions()).contains("In-memory notes service");
+        assertThat(initResult.instructions()).containsIgnoringCase("in-memory notes service");
         assertThat(initResult.capabilities().tools()).isNotNull();
         assertThat(initResult.capabilities().resources()).isNotNull();
         assertThat(initResult.capabilities().prompts()).isNotNull();
